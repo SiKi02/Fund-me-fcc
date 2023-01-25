@@ -4,6 +4,7 @@
 
 const { network } = require("hardhat")
 const { networkConfig, developmentChains } = require("../helper-hardhat-config")
+const { verify } = require("../utils/verify")
 
 // module.exports.default = deployFunc()
 
@@ -30,11 +31,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 
     // When going for localhost or hardhat network we want to use a mock
-    const fundMe = await deploy("FundMe", {
-        _from: deployer,
+    const fundMe = await deploy("fundMe", {
+        from: deployer,
         args: [ethUsdPriceFeedAddress], //Put price feed address
-        log: true
+        log: true,
+        waitConfirmations: network.config.blockConfirmations || 1
     })
+
+    if (
+        !developmentChains.includes(network.name) &&
+        process.env.ETHERSCAN_API_KEY
+    ) {
+        await verify(fundMe.address, [ethUsdPriceFeedAddress])
+    }
     log(
         "------------------------------------------------------------------------"
     )
